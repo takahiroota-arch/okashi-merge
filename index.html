@@ -77,7 +77,7 @@
   const FONT="'M PLUS Rounded 1c', sans-serif";
   const {Engine,Composite,Bodies,Body,Events}=Matter;
   let engine,world,bursts,parts,pops,score,combo,lastMerge,curTier,nextTier,pointerX,canDrop,over,pending,requests;
-  let startT,started,cdStart,cdLast,cdText,timeLeft,lastSec,idc;
+  let startT,started,cdStart,cdLast,cdText,timeLeft,lastSec;
   let shake=0,flash=0,flashCol='#ffd23f',scorePulse=0;
 
   function blocksOf(t){return t<=3?1:(t===4?2:3);}
@@ -103,7 +103,7 @@
     for(let t=3;t<=5;t++){if(blocksOf(t)<=maxB){for(let k=0;k<w[t];k++)pool.push(t);}}
     return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;}
   function makeReq(t,now){const b=blocksOf(t);const kind=Math.random()<0.6?'score':'time';
-    return {id:idc++,tier:t,blocks:b,kind,dur:durOf(b),expire:now+durOf(b)};}
+    return {tier:t,blocks:b,kind,dur:durOf(b),expire:now+durOf(b)};}
   function usedBlocks(){return requests.reduce((s,r)=>s+r.blocks,0);}
   function fillRequests(now){let g=0;while(usedBlocks()<CAP&&g++<20){const t=pickTier(CAP-usedBlocks());if(t==null)break;requests.push(makeReq(t,now));}}
 
@@ -118,7 +118,7 @@
       Bodies.rectangle(W+18,H/2,40,H*2,opt)
     ]);
     bursts=[];parts=[];pops=[];score=0;combo=0;lastMerge=0;pointerX=W/2;canDrop=true;over=false;pending=[];
-    curTier=rnd();nextTier=rnd();idc=0;requests=[];fillRequests(performance.now());renderReqs();
+    curTier=rnd();nextTier=rnd();requests=[];fillRequests(performance.now());renderReqs();
     started=false;cdStart=performance.now();cdLast=-1;cdText='3';timeLeft=GAMETIME;lastSec=99;
     Events.on(engine,'collisionStart',e=>{
       for(const p of e.pairs){const a=p.bodyA,b=p.bodyB;
@@ -290,7 +290,7 @@
     Composite.allBodies(world).filter(b=>b.tier!=null).forEach(b=>Composite.remove(world,b));
     document.getElementById('m-overlay').style.display='none';
     over=false;score=0;combo=0;canDrop=true;curTier=rnd();nextTier=rnd();parts=[];pops=[];bursts=[];
-    idc=0;requests=[];fillRequests(performance.now());renderReqs();
+    requests=[];fillRequests(performance.now());renderReqs();
     started=false;cdStart=performance.now();cdLast=-1;cdText='3';timeLeft=GAMETIME;lastSec=99;
     say('よ〜い…！','🐰');updateHud();});
 

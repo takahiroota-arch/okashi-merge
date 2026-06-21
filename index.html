@@ -21,7 +21,7 @@
   #m-hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
   #m-mai{display:flex;align-items:center;gap:7px;}
   #m-face{font-size:30px;line-height:1;}
-  #m-speech{font-size:12px;color:#ff3d77;max-width:120px;line-height:1.3;font-weight:700;}
+  #m-speech{font-size:12px;color:#ff3d77;max-width:124px;line-height:1.3;font-weight:700;}
   #m-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
   #m-score{font-size:25px;font-weight:700;color:#ff2d6f;transition:transform .08s;line-height:1.1;}
   #m-timer{display:inline-flex;align-items:center;font-size:19px;font-weight:700;color:#ff7a1a;
@@ -42,9 +42,10 @@
   .m-arrow{color:#ff8ab0;font-size:11px;font-weight:700;margin:0 1px;}
   #m-overlay{position:absolute;inset:0;background:rgba(120,55,85,.78);border-radius:20px;display:none;
     flex-direction:column;align-items:center;justify-content:center;z-index:5;}
-  #m-ocard{background:#fff;border:3px solid #ffd0e0;border-radius:22px;padding:18px 26px;display:flex;flex-direction:column;align-items:center;gap:7px;}
+  #m-ocard{background:#fff;border:3px solid #ffd0e0;border-radius:22px;padding:18px 26px;display:flex;flex-direction:column;align-items:center;gap:6px;}
   #m-oemoji{font-size:46px;line-height:1;}
   #m-omsg{font-size:18px;font-weight:700;color:#ff3d77;text-align:center;}
+  #m-orank{font-size:14px;font-weight:700;color:#b06bff;text-align:center;}
   #m-oscorewrap{display:flex;flex-direction:column;align-items:center;background:#fff0f5;border-radius:14px;padding:7px 24px;margin-top:2px;}
   .m-oslabel{font-size:11px;color:#b07089;font-weight:500;}
   #m-oscore{font-size:30px;font-weight:700;color:#ff2d6f;}
@@ -63,7 +64,7 @@
   <canvas id="m-canvas" width="300" height="440"></canvas>
   <div id="m-chain"></div>
   <div id="m-overlay"><div id="m-ocard">
-    <div id="m-oemoji">🎉</div><div id="m-omsg"></div>
+    <div id="m-oemoji">🎉</div><div id="m-omsg"></div><div id="m-orank"></div>
     <div id="m-oscorewrap"><span class="m-oslabel">スコア</span><span id="m-oscore">0</span></div>
     <button class="m-again" id="m-again">もういちど あそぶ</button>
   </div></div>
@@ -73,17 +74,19 @@
 <script>
 (function(){
   const cv=document.getElementById('m-canvas'),ctx=cv.getContext('2d');
-  const W=cv.width,H=cv.height,LINE=56,GAMETIME=60,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07;
+  const W=cv.width,H=cv.height,LINE=56,GAMETIME=60,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,LUCKYP=0.045;
   const EMOJI=['🍬','🍪','🧁','🍩','🍰','🍮','🍦','🎂'];
   const COL=['#ffd1dc','#caa06a','#f7c977','#df9457','#ffb3c6','#e6c061','#bfe3ff','#ff8fab'];
   const RAD=[10,16,20,25,31,38,46,55];
   const PARTYCOL=['#ff4d88','#ffd864','#7ddca4','#7ec8ff','#c89bff','#ffa552'];
   const GOLDCOL=['#ffd23f','#fff2b0','#ffe27a','#ffcf2e'];
+  const CRAVE={3:'ドーナツ ちょうだい！',4:'ケーキ たべたい！',5:'プリン ほしい〜！'};
   const FONT="'M PLUS Rounded 1c', sans-serif";
   const {Engine,Composite,Bodies,Body,Events}=Matter;
   let engine,world,bursts,parts,pops,score,combo,lastMerge,curTier,nextTier,curGolden,nextGolden,pointerX,canDrop,over,pending,requests;
   let startT,started,cdStart,cdLast,cdText,timeLeft,lastSec;
   let feverActive,feverEnd,fulfillStreak,lastFulfillT,feverTimer;
+  let spurtOn,lastReact,lastCraving,burstCombo;
   let shake=0,flash=0,flashCol='#ffd23f',scorePulse=0;
 
   function blocksOf(t){return t<=3?1:(t===4?2:3);}
@@ -91,6 +94,7 @@
   function timeOf(b){return [0,3,5,8][b];}
   function durOf(b){return [0,9000,14000,20000][b];}
   function mult(){return feverActive?2:1;}
+  function spurtMul(){return (started&&!over&&timeLeft<=10)?2:1;}
 
   let AC=null;
   function actx(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}return AC;}
@@ -135,7 +139,7 @@
     curTier=rnd();nextTier=rnd();curGolden=Math.random()<GOLDP;nextGolden=Math.random()<GOLDP;
     requests=[];fillRequests(performance.now());renderReqs();
     started=false;cdStart=performance.now();cdLast=-1;cdText='3';timeLeft=GAMETIME;lastSec=99;
-    resetFever();
+    spurtOn=false;lastReact=0;lastCraving=0;burstCombo=0;resetFever();
     Events.on(engine,'collisionStart',e=>{
       for(const p of e.pairs){const a=p.bodyA,b=p.bodyB;
         if(a.tier!=null&&b.tier!=null&&a.tier===b.tier&&!a.merged&&!b.merged){a.merged=b.merged=true;pending.push([a,b]);}}
@@ -187,7 +191,7 @@
     const i=requests.findIndex(r=>r.tier===mt);if(i<0)return;
     const r=requests[i];const now=performance.now();
     flash=1;flashCol='#ffd23f';shake=Math.max(shake,9);sFulfill();scorePulse=1;
-    if(r.kind==='score'){const add=scoreOf(r.tier)*mult();score+=add;
+    if(r.kind==='score'){const add=Math.round(scoreOf(r.tier)*mult()*spurtMul());score+=add;
       pops.push({x:W/2,y:H*0.42,vy:-0.7,text:'やった！',life:1.3,col:'#ff2d6f',size:23});
       pops.push({x:W/2,y:H*0.52,vy:-0.5,text:'+'+add,life:1.3,col:'#ff8a2b',size:27});
     }else{const sec=timeOf(r.blocks);startT-=sec*1000;
@@ -196,8 +200,10 @@
     spawnBurst(W/2,H*0.45,40,7,PARTYCOL);spawnBurst(x,y,22,6,[COL[mt]]);
     requests.splice(i,1);fillRequests(now);renderReqs();
     fulfillStreak=(now-lastFulfillT<FEVERWIN)?fulfillStreak+1:1;lastFulfillT=now;
+    const cb=Math.round(fulfillStreak*40*mult()*spurtMul());score+=cb;
+    if(fulfillStreak>=2)pops.push({x:W/2,y:H*0.63,vy:-0.5,text:'チェイン×'+fulfillStreak+' +'+cb,life:1.1,col:'#b06bff',size:16});
     if(!feverActive&&fulfillStreak>=3){startFever(now);fulfillStreak=0;}
-    else say('やった〜！だいせいこう〜！','😻');
+    else say('やった〜！','😻');
   }
 
   function spawnBurst(x,y,n,power,cols){
@@ -208,21 +214,32 @@
   function doMerge(a,b){
     if(a.tier==null)return;
     const t=a.tier,nt=t+1,golden=(a.golden||b.golden),gmul=golden?3:1;
+    const lucky=nt<EMOJI.length-1&&Math.random()<LUCKYP;
     const x=(a.position.x+b.position.x)/2,y=(a.position.y+b.position.y)/2;
     Composite.remove(world,a);Composite.remove(world,b);
     bursts.push({x,y,r0:RAD[t],life:1,col:golden?'#ffce2e':COL[t]});spawnBurst(x,y,7,4,[COL[t],'#fff']);
     const now=performance.now();
-    combo=(now-lastMerge<900)?combo+1:1;lastMerge=now;
+    combo=(now-lastMerge<900)?combo+1:1;lastMerge=now;if(combo===1)burstCombo=0;
     const gain=Math.round((nt+1)*10*combo*mult()*gmul);score+=gain;scorePulse=1;
     pops.push({x,y:y-RAD[t],vy:-0.6,text:'+'+gain,life:0.9,col:(golden||feverActive||combo>=3)?'#ff2d6f':'#7b86ff',size:13+Math.min(combo,6)});
     shake=Math.max(shake,1.5+Math.min(combo,5)*0.7);sMerge(t);
-    if(nt<EMOJI.length){addPiece(x,y,nt,-2);tryFulfill(nt,x,y);}
-    else{score+=Math.round(300*mult()*gmul);flash=1;shake=Math.max(shake,8);spawnBurst(x,y,30,7,PARTYCOL);}
+    if(combo>=5&&combo%5===0&&combo!==burstCombo){burstCombo=combo;
+      const bb=Math.round(100*mult()*spurtMul());score+=bb;
+      pops.push({x:W/2,y:H*0.62,vy:-0.55,text:'SWEET BURST！',life:1.4,col:'#ff2d6f',size:23});
+      pops.push({x:W/2,y:H*0.71,vy:-0.5,text:'+'+bb,life:1.4,col:'#ff8a2b',size:21});
+      flash=1;flashCol='#ffd23f';shake=Math.max(shake,10);sFever();}
+    if(nt<EMOJI.length){const outT=lucky?nt+1:nt;addPiece(x,y,outT,-2);tryFulfill(outT,x,y);
+      if(lucky){score+=Math.round((outT+1)*20*mult());flash=1;flashCol='#fff';shake=Math.max(shake,9);sGolden();
+        spawnBurst(x,y,26,8,['#fff','#ffd23f','#7ec8ff','#c89bff']);
+        pops.push({x,y:y-RAD[t]-18,vy:-0.6,text:'✨ラッキーマージ！',life:1.5,col:'#7b86ff',size:17});}
+    }else{score+=Math.round(300*mult()*gmul);flash=1;shake=Math.max(shake,8);spawnBurst(x,y,30,7,PARTYCOL);}
     if(golden){startT-=5000;flash=1;flashCol='#ffe27a';shake=Math.max(shake,8);sGolden();
       spawnBurst(x,y,24,7,GOLDCOL);
-      pops.push({x,y:y-RAD[t]-16,vy:-0.6,text:'✨ゴールデン ×3 +5秒',life:1.5,col:'#d99500',size:15});
-      say('ゴールデン〜！✨','🤩');}
-    else if(combo>=4)say('うわ〜！ ×'+combo+'コンボ！','🤩');
+      pops.push({x,y:y-RAD[t]-16,vy:-0.6,text:'✨ゴールデン ×3 +5秒',life:1.5,col:'#d99500',size:15});}
+    if(golden)say('ゴールデン〜！✨','🤩');
+    else if(lucky)say('ラッキー〜！✨','😍');
+    else if(combo>=5)say('スイートバースト！','🤩');
+    else if(combo>=4)say('×'+combo+'コンボ！','🤩');
     else if(combo>=2)say('れんさ〜！','😆');
     updateHud();
   }
@@ -244,12 +261,19 @@
     }else{document.getElementById('m-oemoji').textContent='🥲';
       document.getElementById('m-omsg').textContent='あふれちゃった〜 おしい！';
       say('うぅ、ざんねん…','😢');sOver();}
+    const rk=score>=2000?['🐰👑','おうかんうさぎ']:(score>=800?['🐰✨','きらきらうさぎ']:['🐰','うさぎ']);
+    document.getElementById('m-orank').textContent=rk[0]+' きょうは '+rk[1]+'！';
     document.getElementById('m-oscore').textContent=score;
     document.getElementById('m-overlay').style.display='flex';
   }
 
-  function say(t,f){document.getElementById('m-speech').textContent=t;document.getElementById('m-face').textContent=f;}
+  function say(t,f){lastReact=performance.now();document.getElementById('m-speech').textContent=t;document.getElementById('m-face').textContent=f;}
   function updateHud(){document.getElementById('m-score').textContent=score;}
+  function maybeCrave(now){
+    if(now-lastReact>2200&&now-lastCraving>4200&&requests.length){
+      const r=requests[Math.floor(Math.random()*requests.length)];
+      lastCraving=now;say('「'+(CRAVE[r.tier]||'たべたい！')+'」','🐰');}
+  }
 
   function updateCountdown(now){
     const e=(now-cdStart)/1000;
@@ -262,6 +286,10 @@
     const el=document.getElementById('m-timer');el.textContent='⏱ '+Math.ceil(timeLeft);
     el.classList.toggle('low',timeLeft<=10);
     const s=Math.ceil(timeLeft);if(s!==lastSec){if(timeLeft<=5&&timeLeft>0)sTick();lastSec=s;}
+    if(timeLeft<=10&&timeLeft>0&&!spurtOn){spurtOn=true;
+      pops.push({x:W/2,y:H*0.5,vy:-0.4,text:'ラストスパート！',life:1.8,col:'#e8434f',size:25});
+      pops.push({x:W/2,y:H*0.59,vy:-0.4,text:'ちゅうもん ほうしゅう2ばい！',life:1.8,col:'#ff8a2b',size:15});
+      flash=1;flashCol='#ffd23f';shake=Math.max(shake,11);sFever();say('ラストスパート！','😤');}
     if(timeLeft<=0)gameOver('time');
   }
   function updateReqs(now){
@@ -323,7 +351,7 @@
       else{Engine.update(engine,1000/60);
         while(pending.length){const[a,b]=pending.pop();doMerge(a,b);}
         if(feverActive&&now>=feverEnd)endFever();
-        updateTimer(now);updateReqs(now);checkOver();}
+        updateTimer(now);updateReqs(now);maybeCrave(now);checkOver();}
     }
     draw(now);requestAnimationFrame(loop);
   }
@@ -336,7 +364,8 @@
     document.getElementById('m-overlay').style.display='none';
     over=false;score=0;combo=0;canDrop=true;curTier=rnd();nextTier=rnd();curGolden=Math.random()<GOLDP;nextGolden=Math.random()<GOLDP;
     parts=[];pops=[];bursts=[];requests=[];fillRequests(performance.now());renderReqs();
-    started=false;cdStart=performance.now();cdLast=-1;cdText='3';timeLeft=GAMETIME;lastSec=99;resetFever();
+    started=false;cdStart=performance.now();cdLast=-1;cdText='3';timeLeft=GAMETIME;lastSec=99;
+    spurtOn=false;lastReact=0;lastCraving=0;burstCombo=0;resetFever();
     say('よ〜い…！','🐰');updateHud();});
 
   setup();loop();

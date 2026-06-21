@@ -356,6 +356,8 @@
     if(feverActive){const a=0.10+0.06*Math.sin(now/80);ctx.fillStyle='rgba(255,200,40,'+a+')';ctx.fillRect(0,0,W,H);}
     if(started&&!over&&timeLeft<=10){const a=0.25+0.25*Math.sin(now/110);ctx.strokeStyle='rgba(232,67,79,'+a+')';
       ctx.lineWidth=8;ctx.strokeRect(4,4,W-8,H-8);}
+    if(started&&!over&&!feverActive&&fulfillStreak>=2&&now-lastFulfillT<FEVERWIN){const a=0.3+0.35*Math.sin(now/120);
+      ctx.strokeStyle='rgba(255,138,43,'+a+')';ctx.lineWidth=7;ctx.strokeRect(4,4,W-8,H-8);}
     if(!started&&!over){ctx.fillStyle='rgba(255,225,238,.82)';ctx.fillRect(0,0,W,H);
       ctx.fillStyle='#ff3d77';ctx.font='700 '+(cdText.length>2?42:96)+'px '+FONT;
       ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(cdText,W/2,H/2);}

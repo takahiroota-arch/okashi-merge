@@ -30,6 +30,7 @@
   @keyframes tpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
   #m-fever{display:none;align-items:center;font-size:13px;font-weight:700;color:#fff;background:#ff3d77;
     padding:2px 10px;border-radius:999px;animation:feverpulse .4s infinite alternate;}
+  #m-fever.hint{background:#ff8a2b;}
   @keyframes feverpulse{from{transform:scale(1)}to{transform:scale(1.14)}}
   #m-reqs{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-flow:dense;gap:4px;margin-bottom:8px;min-height:46px;align-items:end;}
   .m-req{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;}
@@ -75,7 +76,7 @@
 <script>
 (function(){
   const cv=document.getElementById('m-canvas'),ctx=cv.getContext('2d');
-  const W=cv.width,H=cv.height,LINE=56,GAMETIME=60,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,LUCKYP=0.045,OBSTP=0.07,OBW=17,OBH=46;
+  const W=cv.width,H=cv.height,LINE=56,GAMETIME=60,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,OBSTP=0.07,OBW=17,OBH=46;
   const EMOJI=['🍬','🍪','🧁','🍩','🍰','🍮','🍦','🎂'];
   const COL=['#ffd1dc','#caa06a','#f7c977','#df9457','#ffb3c6','#e6c061','#bfe3ff','#ff8fab'];
   const RAD=[10,16,20,25,31,38,46,55];
@@ -114,6 +115,7 @@
   function sFever(){[0,7,12,16,19,24].forEach((n,i)=>tone(523*Math.pow(2,n/12),0.2,'sawtooth',0.09,i*0.06));}
   function sGolden(){[0,7,12,19].forEach((n,i)=>tone(784*Math.pow(2,n/12),0.16,'triangle',0.09,i*0.05));}
   function sClear(){[12,7,4,0].forEach((n,i)=>tone(440*Math.pow(2,n/12),0.12,'square',0.08,i*0.05));}
+  function sAnticip(){[0,2,4,7].forEach((n,i)=>tone(440*Math.pow(2,n/12),0.1,'square',0.07,i*0.06));}
   function startFeverBGM(){let i=0;const seq=[0,4,7,12,7,4,9,12];
     feverTimer=setInterval(()=>{if(!feverActive){clearInterval(feverTimer);feverTimer=null;return;}
       tone(392*Math.pow(2,seq[i%seq.length]/12),0.12,'square',0.05);
@@ -224,7 +226,10 @@
     fulfillStreak=(now-lastFulfillT<FEVERWIN)?fulfillStreak+1:1;lastFulfillT=now;
     const cb=Math.round(fulfillStreak*40*mult()*spurtMul());score+=cb;
     if(fulfillStreak>=2)pops.push({x:W/2,y:H*0.63,vy:-0.5,text:'チェイン×'+fulfillStreak+' +'+cb,life:1.1,col:'#b06bff',size:16});
-    if(!feverActive&&fulfillStreak>=3){startFever(now);fulfillStreak=0;}
+    if(feverActive){say('やった〜！','😻');}
+    else if(fulfillStreak>=3){startFever(now);fulfillStreak=0;}
+    else if(fulfillStreak===2){say('あと1かいで フィーバー！','😳');sAnticip();
+      pops.push({x:W/2,y:H*0.72,vy:-0.5,text:'あと1かいで フィーバー！',life:1.5,col:'#ff7a1a',size:18});}
     else say('やった〜！','😻');
   }
 
@@ -236,7 +241,6 @@
   function doMerge(a,b){
     if(a.tier==null||a.obst||b.obst)return;
     const t=a.tier,nt=t+1,golden=(a.golden||b.golden),gmul=golden?3:1;
-    const lucky=nt<EMOJI.length-1&&Math.random()<LUCKYP;
     const x=(a.position.x+b.position.x)/2,y=(a.position.y+b.position.y)/2;
     Composite.remove(world,a);Composite.remove(world,b);
     bursts.push({x,y,r0:RAD[t],life:1,col:golden?'#ffce2e':COL[t]});spawnBurst(x,y,7,4,[COL[t],'#fff']);
@@ -250,16 +254,13 @@
       pops.push({x:W/2,y:H*0.62,vy:-0.55,text:'SWEET BURST！',life:1.4,col:'#ff2d6f',size:23});
       pops.push({x:W/2,y:H*0.71,vy:-0.5,text:'+'+bb,life:1.4,col:'#ff8a2b',size:21});
       flash=1;flashCol='#ffd23f';shake=Math.max(shake,10);sFever();}
-    if(nt<EMOJI.length){const outT=lucky?nt+1:nt;addPiece(x,y,outT,-2);tryFulfill(outT,x,y);
-      if(lucky){score+=Math.round((outT+1)*20*mult());flash=1;flashCol='#fff';shake=Math.max(shake,9);sGolden();
-        spawnBurst(x,y,26,8,['#fff','#ffd23f','#7ec8ff','#c89bff']);
-        pops.push({x,y:y-RAD[t]-18,vy:-0.6,text:'✨ラッキーマージ！',life:1.5,col:'#7b86ff',size:17});}
-    }else{score+=Math.round(300*mult()*gmul);flash=1;shake=Math.max(shake,8);spawnBurst(x,y,30,7,PARTYCOL);}
-    if(golden){startT-=5000;flash=1;flashCol='#ffe27a';shake=Math.max(shake,8);sGolden();
-      spawnBurst(x,y,24,7,GOLDCOL);
-      pops.push({x,y:y-RAD[t]-16,vy:-0.6,text:'✨ゴールデン ×3 +5秒',life:1.5,col:'#d99500',size:15});}
+    if(nt<EMOJI.length){const outT=(golden&&nt<EMOJI.length-1)?nt+1:nt;addPiece(x,y,outT,-2);tryFulfill(outT,x,y);}
+    else{score+=Math.round(300*mult()*gmul);flash=1;shake=Math.max(shake,8);spawnBurst(x,y,30,7,PARTYCOL);}
+    if(golden){startT-=5000;flash=1;flashCol='#ffe27a';shake=Math.max(shake,9);sGolden();
+      spawnBurst(x,y,26,8,GOLDCOL.concat(['#fff']));
+      pops.push({x,y:y-RAD[t]-15,vy:-0.6,text:'✨ゴールデン！',life:1.6,col:'#d99500',size:18});
+      pops.push({x,y:y-RAD[t]+2,vy:-0.5,text:'×3 +5秒 とびこえ',life:1.5,col:'#d99500',size:13});}
     if(golden)say('ゴールデン〜！✨','🤩');
-    else if(lucky)say('ラッキー〜！✨','😍');
     else if(combo>=5)say('スイートバースト！','🤩');
     else if(combo>=4)say('×'+combo+'コンボ！','🤩');
     else if(combo>=2)say('れんさ〜！','😆');
@@ -293,6 +294,10 @@
 
   function say(t,f){lastReact=performance.now();document.getElementById('m-speech').textContent=t;document.getElementById('m-face').textContent=f;}
   function updateHud(){document.getElementById('m-score').textContent=score;}
+  function updateFeverBadge(now){const el=document.getElementById('m-fever');
+    if(feverActive){el.className='';el.textContent='🔥×2';el.style.display='inline-flex';return;}
+    if(fulfillStreak>=2&&now-lastFulfillT<FEVERWIN){el.className='hint';el.textContent='🔥あと1！';el.style.display='inline-flex';}
+    else{el.style.display='none';}}
   function maybeCrave(now){
     if(now-lastReact>2200&&now-lastCraving>4200&&requests.length){
       const r=requests[Math.floor(Math.random()*requests.length)];
@@ -387,7 +392,7 @@
         while(pending.length){const[a,b]=pending.pop();doMerge(a,b);}
         if(Composite.allBodies(world).filter(x=>x.obst).length>=3)clearObstacles();
         if(feverActive&&now>=feverEnd)endFever();
-        updateTimer(now);updateReqs(now);maybeCrave(now);checkOver();}
+        updateTimer(now);updateReqs(now);updateFeverBadge(now);maybeCrave(now);checkOver();}
     }
     draw(now);requestAnimationFrame(loop);
   }

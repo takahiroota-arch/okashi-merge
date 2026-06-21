@@ -69,12 +69,12 @@
     <button class="m-again" id="m-again">もういちど あそぶ</button>
   </div></div>
 </div>
-<div id="m-foot">タップで落下・連続OK／同じお菓子が合体／🩶おじゃまは3つ集めてどかそう！</div>
+<div id="m-foot">タップで落下・連続OK／同じお菓子が合体／🥄スプーンは3つ集めてどかそう！</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script>
 (function(){
   const cv=document.getElementById('m-canvas'),ctx=cv.getContext('2d');
-  const W=cv.width,H=cv.height,LINE=56,GAMETIME=60,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,LUCKYP=0.045,OBSTP=0.07,OBSTR=22;
+  const W=cv.width,H=cv.height,LINE=56,GAMETIME=60,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,LUCKYP=0.045,OBSTP=0.07,OBW=17,OBH=46;
   const EMOJI=['🍬','🍪','🧁','🍩','🍰','🍮','🍦','🎂'];
   const COL=['#ffd1dc','#caa06a','#f7c977','#df9457','#ffb3c6','#e6c061','#bfe3ff','#ff8fab'];
   const RAD=[10,16,20,25,31,38,46,55];
@@ -174,12 +174,12 @@
     Composite.add(world,b);return b;
   }
   function addObstacle(x,y){
-    const b=Bodies.circle(x,y,OBSTR,{restitution:0.04,friction:0.7,frictionStatic:0.95,density:0.0027,sleepThreshold:28});
-    b.obst=true;b.tier='X';b.or=OBSTR;b.bornAt=performance.now();
+    const b=Bodies.rectangle(x,y,OBW,OBH,{restitution:0.04,friction:0.6,frictionStatic:0.9,density:0.0022,sleepThreshold:28,chamfer:{radius:6}});
+    b.obst=true;b.tier='X';b.ow=OBW;b.oh=OBH;b.bornAt=performance.now();
     Composite.add(world,b);return b;
   }
   function clampX(x,tier){const r=RAD[tier]+3;return Math.max(r,Math.min(W-r,x));}
-  function clampObstX(x){return Math.max(OBSTR+3,Math.min(W-OBSTR-3,x));}
+  function clampObstX(x){return Math.max(OBW/2+3,Math.min(W-OBW/2-3,x));}
 
   function drop(){
     if(!started||over||!canDrop)return;canDrop=false;sDrop();
@@ -194,7 +194,7 @@
     obs.forEach(o=>{spawnBurst(o.position.x,o.position.y,12,5,['#9a9db4','#c9ccdd','#fff']);Composite.remove(world,o);});
     const add=Math.round(50*mult());score+=add;scorePulse=1;
     flash=1;flashCol='#cfe8ff';shake=Math.max(shake,8);sClear();
-    pops.push({x:W/2,y:H*0.55,vy:-0.5,text:'おじゃま どかした！ +'+add,life:1.3,col:'#5b5e74',size:17});
+    pops.push({x:W/2,y:H*0.55,vy:-0.5,text:'スプーン かたづけた！ +'+add,life:1.3,col:'#8a8fb0',size:17});
     say('スッキリ〜！','😄');
   }
 
@@ -267,7 +267,7 @@
     const bodies=Composite.allBodies(world);const now=performance.now();
     for(const b of bodies){if(b.isStatic)continue;if(b.tier==null&&!b.obst)continue;
       if(now-b.bornAt<700)continue;
-      const rr=b.obst?b.or:RAD[b.tier];
+      const rr=b.obst?b.oh/2:RAD[b.tier];
       const top=b.position.y-rr;const slow=Math.hypot(b.velocity.x,b.velocity.y)<0.6;
       if(top<LINE&&slow){if(!b.overSince)b.overSince=now;else if(now-b.overSince>1100){gameOver('overflow');return;}}
       else b.overSince=0;
@@ -364,14 +364,14 @@
       ctx.font=(r*0.7)+'px '+FONT;ctx.fillText('✨',r*0.5,-r*0.55);}
     ctx.restore();ctx.globalAlpha=1;
   }
+  function rrect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
   function drawObstacle(x,y,ang,alpha){
-    const r=OBSTR,sp=11;ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.globalAlpha=alpha;
-    ctx.beginPath();
-    for(let i=0;i<sp*2;i++){const a=Math.PI*i/sp,rr=(i%2===0)?r:r*0.72;
-      const px=Math.cos(a)*rr,py=Math.sin(a)*rr;i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
-    ctx.closePath();ctx.fillStyle='#585b72';ctx.fill();
-    ctx.lineWidth=2.5;ctx.strokeStyle='#373950';ctx.stroke();
-    ctx.font=(r*0.95)+'px '+FONT;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('😖',0,r*0.05);
+    const w=OBW,h=OBH;ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.globalAlpha=alpha;
+    ctx.strokeStyle='#aab0c6';ctx.lineWidth=1.6;
+    ctx.fillStyle='#d4d8e6';rrect(-w*0.30,-h*0.10,w*0.60,h*0.56,w*0.30);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.ellipse(0,-h*0.30,w*0.52,h*0.22,0,0,7);ctx.fillStyle='#e3e6f1';ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.ellipse(-w*0.14,-h*0.34,w*0.22,h*0.09,0,0,7);ctx.fillStyle='#f6f7fc';ctx.fill();
     ctx.restore();ctx.globalAlpha=1;
   }
 

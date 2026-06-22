@@ -188,14 +188,16 @@
 
   function rnd(){return Math.floor(Math.random()*3);}
   function rollNext(){nextTier=rnd();nextObst=Math.random()<OBSTP;nextGolden=!nextObst&&Math.random()<GOLDP;}
-  function pickTier(maxB){const w=feverActive?{3:72,4:24,5:4}:{3:42,4:34,5:24};const pool=[];
-    for(let t=3;t<=5;t++){if(blocksOf(t)<=maxB){for(let k=0;k<w[t];k++)pool.push(t);}}
+  function pickTier(maxB){const w=feverActive?{3:46,4:32,5:22}:{3:36,4:34,5:30};
+    const cnt={3:0,4:0,5:0};for(const r of requests)if(r.tier in cnt)cnt[r.tier]++;
+    const pool=[];
+    for(let t=3;t<=5;t++){if(blocksOf(t)<=maxB&&cnt[t]<2){for(let k=0;k<w[t];k++)pool.push(t);}}
     return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;}
   function makeReq(t,now){const b=blocksOf(t);const kind=Math.random()<0.6?'score':'time';
     const d=Math.round(durOf(b)*(feverActive?0.6:1));
     return {tier:t,blocks:b,kind,dur:d,expire:now+d};}
   function usedBlocks(){return requests.reduce((s,r)=>s+r.blocks,0);}
-  function fillRequests(now){let g=0;while(usedBlocks()<CAP&&g++<20){const t=pickTier(CAP-usedBlocks());if(t==null)break;requests.push(makeReq(t,now));}}
+  function fillRequests(now){let g=0,add=false;while(usedBlocks()<CAP&&g++<20){const t=pickTier(CAP-usedBlocks());if(t==null)break;requests.push(makeReq(t,now));add=true;}return add;}
 
   function setup(){
     renderChain();setFace('🐰');
@@ -397,7 +399,7 @@
   function updateReqs(now){
     let dirty=false;
     for(let i=requests.length-1;i>=0;i--){if(now>=requests[i].expire){requests.splice(i,1);dirty=true;}}
-    if(usedBlocks()<CAP){fillRequests(now);dirty=true;}
+    if(usedBlocks()<CAP&&fillRequests(now))dirty=true;
     if(dirty)renderReqs();
     for(let i=0;i<requests.length;i++){const bar=document.getElementById('m-bar-'+i);if(!bar)continue;
       const frac=Math.max(0,(requests[i].expire-now)/requests[i].dur);

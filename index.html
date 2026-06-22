@@ -75,7 +75,7 @@
 <div id="m-wrap">
   <div id="m-hud">
     <div id="m-score">0</div>
-    <div id="m-timer">⏱ 60</div>
+    <div id="m-timer">⏱ 120</div>
   </div>
   <div id="m-sub">
     <div id="m-mai"><div id="m-face">🐰</div><div id="m-speech">よ〜い…！</div></div>
@@ -97,7 +97,7 @@
 <script>
 (function(){
   const cv=document.getElementById('m-canvas'),ctx=cv.getContext('2d');
-  const W=300,H=440,LINE=56,GAMETIME=60,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,OBSTP=0.07,OBW=42,OBH=72,SETTLE=2.2;
+  const W=300,H=440,LINE=56,GAMETIME=120,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,OBSTP=0.07,OBW=42,OBH=72,SETTLE=2.2;
   const DPR=Math.min(window.devicePixelRatio||1,2.5);
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.scale(DPR,DPR);
   const EMOJI=['🍬','🍪','🧁','🍩','🍰','🍮','🍦','🎂'];

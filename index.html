@@ -137,7 +137,7 @@
   function spurtMul(){return (started&&!over&&timeLeft<=10)?2:1;}
   function titleOf(s){let i=0;for(let k=0;k<TITLES.length;k++){if(s>=TITLES[k][0])i=k;}return {lv:i+1,name:TITLES[i][1]};}
 
-  let AC=null,abus=null,bgm=null,bgmFever=null;
+  let AC=null,abus=null,bgm=null,bgmFever=null,bgmEnd=null;
   function actx(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
     abus=AC.createGain();abus.gain.value=1;
     const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=7200;lp.Q.value=0.5;
@@ -172,9 +172,10 @@
   function sAnticip(){if(playSE('anticip'))return;[0,4,7,12].forEach((n,i)=>blip(1046*Math.pow(2,n/12),1046*Math.pow(2,n/12)*1.15,0.12,'sine',0.062,i*0.06));}
   function loadAudio(src,vol){const a=new Audio();a.loop=true;a.volume=vol;a.ok=false;
     a.addEventListener('canplaythrough',()=>{a.ok=true;});a.addEventListener('error',()=>{a.ok=false;});a.src=src;return a;}
-  bgm=loadAudio('assets/bgm.mp3',0.3);bgmFever=loadAudio('assets/bgm_fever.mp3',0.38);
+  bgm=loadAudio('assets/bgm.mp3',0.3);bgmFever=loadAudio('assets/bgm_fever.mp3',0.38);bgmEnd=loadAudio('assets/bgm_end.mp3',0.32);
   function playBGM(){if(bgm&&bgm.ok&&started&&!over&&!(feverActive&&bgmFever&&bgmFever.ok))bgm.play().catch(()=>{});}
   function stopBGM(){if(bgm)bgm.pause();if(bgmFever)bgmFever.pause();}
+  function playEnd(){if(bgmEnd&&bgmEnd.ok){bgmEnd.currentTime=0;bgmEnd.play().catch(()=>{});}}
   function startFeverBGM(){
     if(bgmFever&&bgmFever.ok){if(bgm)bgm.pause();bgmFever.currentTime=0;bgmFever.play().catch(()=>{});return;}
     let i=0;const seq=[0,4,7,12,7,4,9,12];
@@ -347,7 +348,7 @@
       else b.overSince=0;
     }
   }
-  function gameOver(kind){if(over)return;over=true;canDrop=false;endFever();stopBGM();
+  function gameOver(kind){if(over)return;over=true;canDrop=false;endFever();stopBGM();playEnd();
     if(kind==='time'){document.getElementById('m-oemoji').textContent='🎉';
       document.getElementById('m-omsg').textContent='さいごまで あそべたね！';
       say('やりきった〜！すごい！','😆');flash=1;flashCol='#ffd23f';cutin('clear');
@@ -495,7 +496,7 @@
   cv.addEventListener('pointermove',e=>{pointerX=px(e);});
   cv.addEventListener('pointerdown',e=>{const c=actx();if(c&&c.state==='suspended')c.resume();playBGM();pointerX=px(e);drop();});
   document.getElementById('m-again').addEventListener('click',()=>{
-    stopBGM();
+    stopBGM();if(bgmEnd)bgmEnd.pause();
     Composite.allBodies(world).filter(b=>b.tier!=null).forEach(b=>Composite.remove(world,b));
     document.getElementById('m-overlay').style.display='none';
     over=false;score=0;combo=0;canDrop=true;pending=[];

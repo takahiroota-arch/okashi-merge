@@ -138,7 +138,7 @@
   let AC=null,abus=null,bgm=null,bgmFever=null;
   function actx(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
     abus=AC.createGain();abus.gain.value=1;
-    const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=4200;lp.Q.value=0.5;
+    const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=7200;lp.Q.value=0.5;
     const dly=AC.createDelay(0.6);dly.delayTime.value=0.15;
     const fb=AC.createGain();fb.gain.value=0.27;const wet=AC.createGain();wet.gain.value=0.38;
     abus.connect(lp);lp.connect(AC.destination);
@@ -153,16 +153,16 @@
     o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(60,f1),t+dur);
     g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vol||0.08,t+0.018);
     g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(abus);o.start(t);o.stop(t+dur+0.06);}
-  function sMerge(tier){const b=560+tier*70+Math.min(combo,9)*24;blip(b,b*1.5,0.16,'sine',0.082);}
-  function sDrop(){blip(520,770,0.1,'sine',0.05);}
-  function sFulfill(){[0,5,9,12].forEach((n,i)=>blip(880*Math.pow(2,n/12),880*Math.pow(2,n/12)*1.18,0.18,'triangle',0.07,i*0.07));}
-  function sWin(){[0,4,7,12,16,19].forEach((n,i)=>tone(660*Math.pow(2,n/12),0.24,'triangle',0.08,i*0.1));}
-  function sOver(){[0,-2,-5,-9].forEach((n,i)=>tone(523*Math.pow(2,n/12),0.3,'sine',0.07,i*0.13));}
-  function sTick(){blip(1000,1320,0.08,'sine',0.08);}
-  function sFever(){[0,7,12,16,19].forEach((n,i)=>blip(660*Math.pow(2,n/12),660*Math.pow(2,n/12)*1.1,0.2,'triangle',0.08,i*0.06));}
-  function sGolden(){[0,7,12,16,19,24].forEach((n,i)=>tone(1046*Math.pow(2,n/12),0.18,'sine',0.07,i*0.05));}
-  function sClear(){[12,7,4,0].forEach((n,i)=>blip(740*Math.pow(2,n/12),740*Math.pow(2,n/12)*1.12,0.15,'triangle',0.07,i*0.06));}
-  function sAnticip(){[0,4,7,12].forEach((n,i)=>blip(660*Math.pow(2,n/12),660*Math.pow(2,n/12)*1.15,0.12,'sine',0.07,i*0.06));}
+  function sMerge(tier){const b=920+tier*95+Math.min(combo,9)*30;blip(b,b*1.5,0.15,'sine',0.075);}
+  function sDrop(){blip(740,1100,0.1,'sine',0.05);}
+  function sFulfill(){[0,5,9,12].forEach((n,i)=>blip(1175*Math.pow(2,n/12),1175*Math.pow(2,n/12)*1.18,0.17,'triangle',0.062,i*0.07));}
+  function sWin(){[0,4,7,12,16,19].forEach((n,i)=>tone(988*Math.pow(2,n/12),0.22,'triangle',0.07,i*0.1));}
+  function sOver(){[0,-2,-5,-9].forEach((n,i)=>tone(587*Math.pow(2,n/12),0.3,'sine',0.07,i*0.13));}
+  function sTick(){blip(1320,1720,0.08,'sine',0.075);}
+  function sFever(){[0,7,12,16,19].forEach((n,i)=>blip(988*Math.pow(2,n/12),988*Math.pow(2,n/12)*1.1,0.18,'triangle',0.07,i*0.06));}
+  function sGolden(){[0,7,12,16,19].forEach((n,i)=>tone(1318*Math.pow(2,n/12),0.16,'sine',0.06,i*0.05));}
+  function sClear(){[12,7,4,0].forEach((n,i)=>blip(1100*Math.pow(2,n/12),1100*Math.pow(2,n/12)*1.12,0.14,'triangle',0.062,i*0.06));}
+  function sAnticip(){[0,4,7,12].forEach((n,i)=>blip(1046*Math.pow(2,n/12),1046*Math.pow(2,n/12)*1.15,0.12,'sine',0.062,i*0.06));}
   function loadAudio(src,vol){const a=new Audio();a.loop=true;a.volume=vol;a.ok=false;
     a.addEventListener('canplaythrough',()=>{a.ok=true;});a.addEventListener('error',()=>{a.ok=false;});a.src=src;return a;}
   bgm=loadAudio('assets/bgm.mp3',0.3);bgmFever=loadAudio('assets/bgm_fever.mp3',0.38);
@@ -172,8 +172,8 @@
     if(bgmFever&&bgmFever.ok){if(bgm)bgm.pause();bgmFever.currentTime=0;bgmFever.play().catch(()=>{});return;}
     let i=0;const seq=[0,4,7,12,7,4,9,12];
     feverTimer=setInterval(()=>{if(!feverActive){clearInterval(feverTimer);feverTimer=null;return;}
-      tone(659*Math.pow(2,seq[i%seq.length]/12),0.16,'triangle',0.05);
-      if(i%2===0)tone(330,0.18,'sine',0.045);i++;},170);}
+      tone(988*Math.pow(2,seq[i%seq.length]/12),0.16,'triangle',0.045);
+      if(i%2===0)tone(494,0.18,'sine',0.04);i++;},170);}
 
   function cutin(key){const im=IMG['cutin_'+key];if(!im)return;const el=document.getElementById('m-cutin');
     el.style.backgroundImage="url('assets/cutin_"+key+".png')";el.classList.remove('show');void el.offsetWidth;el.classList.add('show');}

@@ -155,16 +155,21 @@
     o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(60,f1),t+dur);
     g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vol||0.08,t+0.018);
     g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(abus);o.start(t);o.stop(t+dur+0.06);}
-  function sMerge(tier){const b=920+tier*95+Math.min(combo,9)*30;blip(b,b*1.5,0.15,'sine',0.075);}
-  function sDrop(){blip(740,1100,0.1,'sine',0.05);}
-  function sFulfill(){[0,5,9,12].forEach((n,i)=>blip(1175*Math.pow(2,n/12),1175*Math.pow(2,n/12)*1.18,0.17,'triangle',0.062,i*0.07));}
-  function sWin(){[0,4,7,12,16,19].forEach((n,i)=>tone(988*Math.pow(2,n/12),0.22,'triangle',0.07,i*0.1));}
-  function sOver(){[0,-2,-5,-9].forEach((n,i)=>tone(587*Math.pow(2,n/12),0.3,'sine',0.07,i*0.13));}
-  function sTick(){blip(1320,1720,0.08,'sine',0.075);}
-  function sFever(){[0,7,12,16,19].forEach((n,i)=>blip(988*Math.pow(2,n/12),988*Math.pow(2,n/12)*1.1,0.18,'triangle',0.07,i*0.06));}
-  function sGolden(){[0,7,12,16,19].forEach((n,i)=>tone(1318*Math.pow(2,n/12),0.16,'sine',0.06,i*0.05));}
-  function sClear(){[12,7,4,0].forEach((n,i)=>blip(1100*Math.pow(2,n/12),1100*Math.pow(2,n/12)*1.12,0.14,'triangle',0.062,i*0.06));}
-  function sAnticip(){[0,4,7,12].forEach((n,i)=>blip(1046*Math.pow(2,n/12),1046*Math.pow(2,n/12)*1.15,0.12,'sine',0.062,i*0.06));}
+  const SE={};
+  function loadSE(key,src){const a=new Audio();a.preload='auto';a.ok=false;
+    a.addEventListener('canplaythrough',()=>{a.ok=true;});a.addEventListener('error',()=>{a.ok=false;});a.src=src;SE[key]=a;}
+  ['drop','merge','fulfill','win','over','tick','fever','golden','clear','anticip'].forEach(k=>loadSE(k,'assets/se_'+k+'.mp3'));
+  function playSE(key,vol){const a=SE[key];if(a&&a.ok){try{const c=a.cloneNode();c.volume=vol==null?0.5:vol;c.play().catch(()=>{});return true;}catch(e){}}return false;}
+  function sMerge(tier){if(playSE('merge'))return;const b=920+tier*95+Math.min(combo,9)*30;blip(b,b*1.5,0.15,'sine',0.075);}
+  function sDrop(){if(playSE('drop',0.4))return;blip(740,1100,0.1,'sine',0.05);}
+  function sFulfill(){if(playSE('fulfill'))return;[0,5,9,12].forEach((n,i)=>blip(1175*Math.pow(2,n/12),1175*Math.pow(2,n/12)*1.18,0.17,'triangle',0.062,i*0.07));}
+  function sWin(){if(playSE('win'))return;[0,4,7,12,16,19].forEach((n,i)=>tone(988*Math.pow(2,n/12),0.22,'triangle',0.07,i*0.1));}
+  function sOver(){if(playSE('over'))return;[0,-2,-5,-9].forEach((n,i)=>tone(587*Math.pow(2,n/12),0.3,'sine',0.07,i*0.13));}
+  function sTick(){if(playSE('tick',0.5))return;blip(1320,1720,0.08,'sine',0.075);}
+  function sFever(){if(playSE('fever'))return;[0,7,12,16,19].forEach((n,i)=>blip(988*Math.pow(2,n/12),988*Math.pow(2,n/12)*1.1,0.18,'triangle',0.07,i*0.06));}
+  function sGolden(){if(playSE('golden'))return;[0,7,12,16,19].forEach((n,i)=>tone(1318*Math.pow(2,n/12),0.16,'sine',0.06,i*0.05));}
+  function sClear(){if(playSE('clear'))return;[12,7,4,0].forEach((n,i)=>blip(1100*Math.pow(2,n/12),1100*Math.pow(2,n/12)*1.12,0.14,'triangle',0.062,i*0.06));}
+  function sAnticip(){if(playSE('anticip'))return;[0,4,7,12].forEach((n,i)=>blip(1046*Math.pow(2,n/12),1046*Math.pow(2,n/12)*1.15,0.12,'sine',0.062,i*0.06));}
   function loadAudio(src,vol){const a=new Audio();a.loop=true;a.volume=vol;a.ok=false;
     a.addEventListener('canplaythrough',()=>{a.ok=true;});a.addEventListener('error',()=>{a.ok=false;});a.src=src;return a;}
   bgm=loadAudio('assets/bgm.mp3',0.3);bgmFever=loadAudio('assets/bgm_fever.mp3',0.38);

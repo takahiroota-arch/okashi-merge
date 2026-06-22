@@ -254,10 +254,10 @@
   function renderReqs(){
     document.getElementById('m-reqs').innerHTML=requests.map((r,i)=>{
       const lab=r.kind==='score'?('+'+scoreOf(r.tier)):('+'+timeOf(r.blocks)+'秒');
-      const col=r.kind==='score'?'#ff2d6f':'#13b0a3';
+      const ac=r.kind==='score'?'#ff3b5c':'#2f8bff';
       const face=IMG['candy'+r.tier]?'<img class="m-chipimg" src="assets/candy_'+r.tier+'.png" alt="">':EMOJI[r.tier];
-      return '<div class="m-req" style="grid-column:span '+r.blocks+'"><div class="m-pts" style="color:'+col+'">'+lab+
-        '</div><div class="m-chip" id="m-chip-'+i+'">'+face+'<span class="m-bar" id="m-bar-'+i+'"></span></div></div>';
+      return '<div class="m-req" style="grid-column:span '+r.blocks+'"><div class="m-pts" style="color:'+ac+'">'+lab+
+        '</div><div class="m-chip" id="m-chip-'+i+'" style="border-color:'+ac+'">'+face+'<span class="m-bar" id="m-bar-'+i+'"></span></div></div>';
     }).join('');
   }
   function tryFulfill(mt,x,y){
@@ -404,8 +404,15 @@
       ctx.strokeStyle='rgba(255,150,190,.35)';ctx.lineWidth=2;
       ctx.beginPath();ctx.moveTo(gx,LINE);ctx.lineTo(gx,H);ctx.stroke();
       if(curObst)drawObstacle(gx,LINE-5,0,.6);else drawPiece(gx,LINE-5,curTier,0,.55,curGolden);}
+    const need={};
+    for(const r of requests){const st=r.tier-1;if(st>=0&&!(st in need))need[st]=r.kind==='score'?'#ff3b5c':'#2f8bff';}
     for(const b of Composite.allBodies(world)){if(b.obst){drawObstacle(b.position.x,b.position.y,b.angle,1);continue;}
-      if(b.tier==null)continue;drawPiece(b.position.x,b.position.y,b.tier,b.angle,1,b.golden);}
+      if(b.tier==null)continue;
+      const ac=need[b.tier];
+      if(ac&&started&&!over){const pa=0.26+0.2*Math.sin(now/240),rr=RAD[b.tier];
+        ctx.globalAlpha=pa;ctx.fillStyle=ac;ctx.beginPath();ctx.arc(b.position.x,b.position.y,rr*1.42,0,7);ctx.fill();
+        ctx.globalAlpha=Math.min(0.85,pa+0.4);ctx.lineWidth=2.5;ctx.strokeStyle=ac;ctx.beginPath();ctx.arc(b.position.x,b.position.y,rr*1.22,0,7);ctx.stroke();ctx.globalAlpha=1;}
+      drawPiece(b.position.x,b.position.y,b.tier,b.angle,1,b.golden);}
     for(let i=bursts.length-1;i>=0;i--){const p=bursts[i];p.life-=0.08;if(p.life<=0){bursts.splice(i,1);continue;}
       ctx.strokeStyle=p.col;ctx.globalAlpha=p.life;ctx.lineWidth=3;
       ctx.beginPath();ctx.arc(p.x,p.y,p.r0*(1+(1-p.life)*1.5),0,7);ctx.stroke();ctx.globalAlpha=1;}

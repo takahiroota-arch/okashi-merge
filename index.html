@@ -99,12 +99,12 @@
 <script>
 (function(){
   const cv=document.getElementById('m-canvas'),ctx=cv.getContext('2d');
-  const W=300,H=440,LINE=56,GAMETIME=120,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,OBSTP=0.07,OBW=42,OBH=72,SETTLE=2.2;
+  const W=300,H=440,LINE=56,GAMETIME=120,CAP=7,FEVERWIN=3500,FEVERDUR=5000,GOLDP=0.07,OBSTP=0.07,OBW=63,OBH=108,SETTLE=2.6;
   const DPR=Math.min(window.devicePixelRatio||1,2.5);
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.scale(DPR,DPR);
   const EMOJI=['🍬','🍪','🧁','🍩','🍰','🍮','🍦','🎂'];
   const COL=['#ffd1dc','#caa06a','#f7c977','#df9457','#ffb3c6','#e6c061','#bfe3ff','#ff8fab'];
-  const RAD=[10,16,20,25,31,38,46,55];
+  const RAD=[15,24,30,38,47,57,69,83];
   const PARTYCOL=['#ff4d88','#ffd864','#7ddca4','#7ec8ff','#c89bff','#ffa552'];
   const GOLDCOL=['#ffd23f','#fff2b0','#ffe27a','#ffcf2e'];
   const CRAVE={3:'ドーナツ ちょうだい！',4:'ケーキ たべたい！',5:'プリン ほしい〜！'};
@@ -194,7 +194,7 @@
     for(let t=3;t<=5;t++){if(blocksOf(t)<=maxB&&cnt[t]<2){for(let k=0;k<w[t];k++)pool.push(t);}}
     return pool.length?pool[Math.floor(Math.random()*pool.length)]:null;}
   function makeReq(t,now){const b=blocksOf(t);const kind=Math.random()<0.6?'score':'time';
-    const d=Math.round(durOf(b)*(feverActive?0.6:1));
+    const d=Math.round(durOf(b)*(feverActive?0.6:1)/0.7);
     return {tier:t,blocks:b,kind,dur:d,expire:now+d};}
   function usedBlocks(){return requests.reduce((s,r)=>s+r.blocks,0);}
   function fillRequests(now){let g=0,add=false;while(usedBlocks()<CAP&&g++<20){const t=pickTier(CAP-usedBlocks());if(t==null)break;requests.push(makeReq(t,now));add=true;}return add;}
@@ -242,7 +242,12 @@
     Composite.add(world,b);return b;
   }
   function addObstacle(x,y){
-    const b=Bodies.rectangle(x,y,OBW,OBH,{restitution:0.04,friction:0.6,frictionStatic:0.9,density:0.0022,sleepThreshold:28,chamfer:{radius:6}});
+    const bw=OBW,bh=OBH,br=bw*0.5;
+    const opt={density:0.0022,restitution:0.04,friction:0.6,frictionStatic:0.9};
+    const bowl=Bodies.circle(0,-bh*0.5+br,br,opt);
+    const handle=Bodies.rectangle(0,bh*0.14,bw*0.42,bh*0.72,Object.assign({chamfer:{radius:bw*0.18}},opt));
+    const b=Body.create({parts:[bowl,handle],sleepThreshold:28});
+    Body.setPosition(b,{x,y});
     b.obst=true;b.tier='X';b.oh=OBH;b.bornAt=performance.now();
     Composite.add(world,b);return b;
   }
@@ -303,7 +308,7 @@
       if(Math.hypot(a.velocity.x,a.velocity.y)>=SETTLE)continue;
       for(let j=i+1;j<bs.length;j++){const b=bs[j];
         if(b.merged||a.tier!==b.tier||Math.hypot(b.velocity.x,b.velocity.y)>=SETTLE)continue;
-        const dx=a.position.x-b.position.x,dy=a.position.y-b.position.y,rr=(RAD[a.tier]+RAD[b.tier])*1.02;
+        const dx=a.position.x-b.position.x,dy=a.position.y-b.position.y,rr=(RAD[a.tier]+RAD[b.tier])*1.0;
         if(dx*dx+dy*dy<=rr*rr){a.merged=b.merged=true;pending.push([a,b]);break;}}}
   }
   function spawnBurst(x,y,n,power,cols){
